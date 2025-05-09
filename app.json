@@ -35,6 +35,10 @@
         }
       ]
     ],
+    "updates": {
+  "fallbackToCacheTimeout": 0,
+  "enabled": false
+},
     "experiments": {
       "typedRoutes": true
     }
