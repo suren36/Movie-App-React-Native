@@ -12,13 +12,13 @@ const Search = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
-  
+
   // Use the useFetch hook with the debouncedQuery
   const {
     data: movies,
     loading,
     error,
-    fetchData
+    fetchData,
   } = useFetch(
     () =>
       fetchMovies({
@@ -26,22 +26,21 @@ const Search = () => {
       }),
     !!debouncedQuery.trim() // Only fetch if there's a non-empty query
   );
-  
+
   // Debounce the search query to avoid too many API calls
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      const trimmedQuery = searchQuery.trim();
-      if (trimmedQuery.length >= 2) { // Only search if at least 2 characters
-        setDebouncedQuery(trimmedQuery);
-      } else if (trimmedQuery.length === 0) {
+      const trimmedQurey = searchQuery.trim();
+      if (trimmedQurey.length >= 2) {
+        setDebouncedQuery(trimmedQurey);
+      } else if (trimmedQurey.length === 0) {
         setDebouncedQuery("");
       }
-    }, 500); // 500ms delay after typing stops
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Trigger fetch when debounced query changes
   useEffect(() => {
     if (debouncedQuery.trim()) {
       fetchData();
@@ -51,7 +50,6 @@ const Search = () => {
   // Handle text change
   const handleTextChange = (text: string) => {
     setSearchQuery(text);
-    console.log("Typing:", text);
   };
 
   return (
@@ -65,16 +63,22 @@ const Search = () => {
       <FlatList
         className="flex-1 px-5"
         data={movies || []}
-        keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
+        keyExtractor={(item) =>
+          item?.id?.toString() || Math.random().toString()
+        }
         renderItem={({ item }) => <MovieCard {...item} />}
         numColumns={3}
-        columnWrapperStyle={movies?.length > 0 ? {
-          justifyContent: "flex-start",
-          gap: 16,
-          paddingRight: 5,
-          marginBottom: 10,
-          marginVertical: 10,
-        } : undefined}
+        columnWrapperStyle={
+          movies?.length > 0
+            ? {
+                justifyContent: "flex-start",
+                gap: 16,
+                paddingRight: 5,
+                marginBottom: 10,
+                marginVertical: 10,
+              }
+            : undefined
+        }
         contentContainerStyle={{ paddingBottom: 100 }}
         ListHeaderComponent={
           <>
@@ -89,7 +93,7 @@ const Search = () => {
                 // No need for onPress handler with live search
               />
             </View>
-            
+
             {loading && (
               <ActivityIndicator
                 size="large"
@@ -97,34 +101,35 @@ const Search = () => {
                 className="mt-10"
               />
             )}
-            
+
             {error && (
               <Text className="text-white text-center mt-10">
                 {error.message || "An error occurred while searching"}
               </Text>
             )}
-            
+
             {/* Show "Type to search" when query is empty */}
             {!loading && !error && !searchQuery.trim() && (
               <Text className="text-white text-center mt-10">
                 Type to search for movies
               </Text>
             )}
-            
-            {/* Show "No results" when query exists but no results */}
-            {!loading && !error && debouncedQuery.trim() && (!movies || movies.length === 0) && (
-              <Text className="text-white text-center mt-10">
-                No movies found for "{debouncedQuery}"
-              </Text>
-            )}
-            
+
             {/* Show results count when we have results */}
-            {!loading && !error && debouncedQuery.trim() && movies?.length > 0 && (
-              <Text className="text-xl text-white font-bold mt-5 mb-3">
-                Search Results for "{debouncedQuery}" ({movies.length})
-              </Text>
-            )}
+            {!loading &&
+              !error &&
+              debouncedQuery.trim() &&
+              movies?.length > 0 && (
+                <Text className="text-xl text-white font-bold mt-5 mb-3">
+                  Search Results for "{debouncedQuery}" ({movies.length})
+                </Text>
+              )}
           </>
+        }
+        ListEmptyComponent={
+          !loading && debouncedQuery.trim() ? (
+            <Text className="text-white text-center mt-10">No Movies Found for "{debouncedQuery}"</Text>
+          ) : null
         }
       />
     </View>
