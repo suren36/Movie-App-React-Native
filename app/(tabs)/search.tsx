@@ -7,45 +7,36 @@ import { fetchMovies } from "@/services/api";
 import { useRouter } from "expo-router";
 import MovieCard from "@/components/MovieCard";
 import SearchBars from "@/components/SearchBar"; // Make sure this matches your component name
+import { updateSearchCount } from "@/services/appwrite";
 
 const Search = () => {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [debouncedQuery, setDebouncedQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery] = useState<string>("");
 
-  // Use the useFetch hook with the debouncedQuery
-  const {
-    data: movies,
-    loading,
-    error,
-    fetchData,
-  } = useFetch(
-    () =>
-      fetchMovies({
-        query: debouncedQuery.trim(),
-      }),
-    !!debouncedQuery.trim() // Only fetch if there's a non-empty query
-  );
+const { data: movies, loading, error, fetchData: loadMovies, reset } = useFetch(() => fetchMovies({ query: searchQuery }), false);
 
-  // Debounce the search query to avoid too many API calls
+useEffect(()=>{
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmedQurey = searchQuery.trim();
-      if (trimmedQurey.length >= 2) {
-        setDebouncedQuery(trimmedQurey);
-      } else if (trimmedQurey.length === 0) {
-        setDebouncedQuery("");
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+const timeoutId = setTimeout(async()=>{
+  if(searchQuery.trim()){
+    await loadMovies();
 
-  useEffect(() => {
-    if (debouncedQuery.trim()) {
-      fetchData();
+    if(movies?.length > 0 && movies?.[0]){
+      await updateSearchCount(searchQuery, movies[0]);
     }
-  }, [debouncedQuery]);
+  } else { 
+    reset();
+  }
+}, 1000);
+return () => 
+  clearTimeout(timeoutId);
+},[searchQuery])
+useEffect(() => {
+  if (searchQuery.trim() && movies?.length > 0) {
+    updateSearchCount(searchQuery.trim().toLowerCase(), movies[0]);
+  }
+}, [movies]);
 
   // Handle text change
   const handleTextChange = (text: string) => {
@@ -64,8 +55,7 @@ const Search = () => {
         className="flex-1 px-5"
         data={movies || []}
         keyExtractor={(item) =>
-          item?.id?.toString() || Math.random().toString()
-        }
+item.id.toString()        }
         renderItem={({ item }) => <MovieCard {...item} />}
         numColumns={3}
         columnWrapperStyle={
@@ -89,7 +79,7 @@ const Search = () => {
               <SearchBars
                 placeholder="Search Movies ..."
                 value={searchQuery}
-                onChangeText={handleTextChange}
+                onChangeText={(text:string)=> setSearchQuery(text)}
                 // No need for onPress handler with live search
               />
             </View>
@@ -118,17 +108,17 @@ const Search = () => {
             {/* Show results count when we have results */}
             {!loading &&
               !error &&
-              debouncedQuery.trim() &&
+              searchQuery.trim() &&
               movies?.length > 0 && (
                 <Text className="text-xl text-white font-bold mt-5 mb-3">
-                  Search Results for "{debouncedQuery}" ({movies.length})
+                  Search Results for "{searchQuery}" ({movies.length})
                 </Text>
               )}
           </>
         }
         ListEmptyComponent={
-          !loading && debouncedQuery.trim() ? (
-            <Text className="text-white text-center mt-10">No Movies Found for "{debouncedQuery}"</Text>
+          !loading && searchQuery.trim() ? (
+            <Text className="text-white text-center mt-10">No Movies Found for "{searchQuery}"</Text>
           ) : null
         }
       />

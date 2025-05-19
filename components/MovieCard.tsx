@@ -9,6 +9,7 @@ const MovieCard = ({
   poster_path,
   vote_average,
   release_date,
+  
 }: Movie) => {
   return (
     <Link href={`/movies/${id}`} asChild>
